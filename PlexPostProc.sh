@@ -92,18 +92,28 @@ if [ ! -z "$1" ]; then
    FILENAME=$1  # %FILE% - Filename of original file
 
    FILESIZE="$(ls -lh "$FILENAME" | awk '{ print $5 }')"
+   
+   LOGFILE="$TMPFOLDER/plex_DVR_post_processing_log"
+   touch $LOGFILE # Create the log file
 
    RANDFILENAME="$(mktemp)"  # Base random name, will be used for cleanup
+   printf "randfilename=$RANDFILENAME right after $(mk...)" | tee -a $LOGFILE
+
    rm -f "$RANDFILENAME" #Cleanup mktemp artifact
-   TEMPFILENAME="$RANDFILENAME.mkv"  # Temporary File Name for transcoding
+   TEMPFILENAME="$TMPFOLDER$RANDFILENAME.mkv"  # Temporary File Name for transcoding
+  
+   printf "new recording with $TEMPFILENAME in $TMPFOLDER" | tee -a $LOGFILE
+
+   chmod 755 "$TEMPFILENAME" # set permissions of file
+   chown plex "$TEMPFILENAME"
+   check_errs $? "Failed to change permissions and ownership of converted file: $TEMPFILENAME"
+
+   printf "set new permissions of  $TEMPFILENAME" | tee -a $LOGFILE
 
    LOCKFILE="$(mktemp)"  # [WORKAROUND] Temporary File for blocking simultaneous scripts from ending early
    rm -f "$LOCKFILE" #Clean up mktemp artifact
    touch "$LOCKFILE.ppplock" # Create the lock file
    check_errs $? "Failed to create temporary lockfile: $LOCKFILE.ppplock"
-
-   LOGFILE="$TMPFOLDER/plex_DVR_post_processing_log"
-   touch $LOGFILE # Create the log file
 
    # Uncomment if you want to adjust the bandwidth for this thread
    #MYPID=$$    # Process ID for current script
@@ -207,9 +217,6 @@ if [ ! -z "$1" ]; then
 
    rm -f "$FILENAME" # Delete original in .grab folder
    check_errs $? "Failed to remove original file: $FILENAME"
-
-   chmod 755 "$TEMPFILENAME" # set permissions of file
-   check_errs $? "Failed to change permissions of  converted file: $TEMPFILENAME"
 
    mv -f "$TEMPFILENAME" "${FILENAME%.ts}.mkv" # Move completed tempfile to .grab folder/filename
    check_errs $? "Failed to move converted file: $TEMPFILENAME"
