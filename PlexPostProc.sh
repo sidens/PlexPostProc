@@ -37,7 +37,7 @@
 #******************************************************************************
 
 TMPFOLDER="/tmp"
-ENCODER="ff_qsv"  # Encoder to use:
+ENCODER="ffmpeg"  # Encoder to use:
                   # "ffmpeg" for FFMPEG [DEFAULT]
                   # "handbrake" for HandBrake
                   # "ff_qsv" for FFMPEG with QSV support
@@ -156,9 +156,9 @@ if [ ! -z "$1" ]; then
      # https://ffmpeg.org/ffmpeg.html#Video-and-Audio-file-format-conversion
      # https://arstechnica.com/civis/threads/ffmpeg-and-quicksync.1433269/
      if [[ $DOWNMIX_AUDIO -ne  0 ]]; then
-         ffmpeg -hwaccel qsv -i "$FILENAME" -s hd$RES -c:v  hevc_qsv -load_plugin hevc_hw -r "$VIDEO_FRAMERATE"  -preset slow -global_quality 22 -look_ahead 1 -crf "$VIDEO_QUALITY" -vf yadif -codec:a "$AUDIO_CODEC" -ac "$DOWNMIX_AUDIO" -b:a "$AUDIO_BITRATE"k -async 1 "$TEMPFILENAME"
+         ffmpeg -hwaccel_output_format qsv -i "$FILENAME" -s hd$RES -c:v h264_qsv -r "$VIDEO_FRAMERATE"  -preset slow -global_quality 22 -look_ahead 1 -crf "$VIDEO_QUALITY" -vf yadif -codec:a "$AUDIO_CODEC" -ac "$DOWNMIX_AUDIO" -b:a "$AUDIO_BITRATE"k -async 1 "$TEMPFILENAME"
      else
-         ffmpeg -hwaccel qsv -i "$FILENAME" -s hd$RES -c:v  hevc_qsv -load_plugin hevc_hw -r "$VIDEO_FRAMERATE"  -preset slow -global_quality 22 -look_ahead 1 -crf "$VIDEO_QUALITY" -vf yadif -codec:a "$AUDIO_CODEC" -b:a "$AUDIO_BITRATE"k -async 1 "$TEMPFILENAME" 
+         ffmpeg -hwaccel_output_format qsv -i "$FILENAME" -s hd$RES -c:v h264_qsv -r "$VIDEO_FRAMERATE"  -preset slow -global_quality 22 -look_ahead 1 -crf "$VIDEO_QUALITY" -vf yadif -codec:a "$AUDIO_CODEC" -b:a "$AUDIO_BITRATE"k -async 1 "$TEMPFILENAME" 
      fi
      end_time=$(date +%s)
      seconds="$(( end_time - start_time ))"
