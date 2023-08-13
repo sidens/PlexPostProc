@@ -8,7 +8,7 @@
 #******************************************************************************
 #******************************************************************************
 #
-#  Version: 2022.2.7 (forked by apassiou)
+#  Version: 2022.8.12 (forked by sidens)
 #
 #  Pre-requisites:
 #     ffmpeg (recommended) with libx265 or handbrakecli
@@ -37,9 +37,10 @@
 #******************************************************************************
 
 TMPFOLDER="/tmp"
-ENCODER="ffmpeg"  # Encoder to use:
+ENCODER="ff_qsv"  # Encoder to use:
                   # "ffmpeg" for FFMPEG [DEFAULT]
                   # "handbrake" for HandBrake
+                  # "ff_qsv" for FFMPEG with QSV support
                   # "nvtrans" for Plex Transcoder with NVENC support
 RES="720"         # Resolution to convert to:
                   # "480" = 480 Vertical Resolution
@@ -142,6 +143,29 @@ if [ ! -z "$1" ]; then
      seconds_taken="$(( $seconds - (minutes_taken * 60) ))"
      LOG_STRING_4="$(ls -lh $TEMPFILENAME | awk ' { print $5 }')] - [$minutes_taken min $seconds_taken sec]\n"
      check_errs $? "Failed to convert using FFMPEG."
+   elif [[ $ENCODER == "ff_qsv" ]]; then
+     LOG_STRING_2="Using FFMPEG w QSV"
+     LOG_STRING_3=" [$FILESIZE -> "
+     if [[ PPP_CHECK -eq 0 ]]; then
+         printf "$LOG_STRING_2$LOG_STRING_3" | tee -a $LOGFILE
+     fi
+     start_time=$(date +%s)
+     # Below edits from
+     # https://www.ramugedia.com/how-encode-decode-hevc-h-265-by-intel-quick-sync-video-hw--qsv-
+     # https://trac.ffmpeg.org/wiki/Hardware/QuickSync
+     # https://ffmpeg.org/ffmpeg.html#Video-and-Audio-file-format-conversion
+     # https://arstechnica.com/civis/threads/ffmpeg-and-quicksync.1433269/
+     if [[ $DOWNMIX_AUDIO -ne  0 ]]; then
+         ffmpeg -hwaccel qsv -i "$FILENAME" -s hd$RES -c:v  hevc_qsv -load_plugin hevc_hw -r "$VIDEO_FRAMERATE"  -preset slow -global_quality 22 -look_ahead 1 -crf "$VIDEO_QUALITY" -vf yadif -codec:a "$AUDIO_CODEC" -ac "$DOWNMIX_AUDIO" -b:a "$AUDIO_BITRATE"k -async 1 "$TEMPFILENAME"
+     else
+         ffmpeg -hwaccel qsv -i "$FILENAME" -s hd$RES -c:v  hevc_qsv -load_plugin hevc_hw -r "$VIDEO_FRAMERATE"  -preset slow -global_quality 22 -look_ahead 1 -crf "$VIDEO_QUALITY" -vf yadif -codec:a "$AUDIO_CODEC" -b:a "$AUDIO_BITRATE"k -async 1 "$TEMPFILENAME" 
+     fi
+     end_time=$(date +%s)
+     seconds="$(( end_time - start_time ))"
+     minutes_taken="$(( seconds / 60 ))"
+     seconds_taken="$(( $seconds - (minutes_taken * 60) ))"
+     LOG_STRING_4="$(ls -lh $TEMPFILENAME | awk ' { print $5 }')] - [$minutes_taken min $seconds_taken sec]\n"
+     check_errs $? "Failed to convert using FFMPEG w QSV."
    elif [[ $ENCODER == "nvtrans" ]]; then
      export FFMPEG_EXTERNAL_LIBS="$(find ~/Library/Application\ Support/Plex\ Media\ Server/Codecs/ -name "libmpeg2video_decoder.so" -printf "%h\n")/"
      check_errs $? "Failed to convert using smart Plex Transcoder (NVENC). libmpeg2video_decoder.so not found."
