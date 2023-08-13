@@ -208,6 +208,8 @@ if [ ! -z "$1" ]; then
    rm -f "$FILENAME" # Delete original in .grab folder
    check_errs $? "Failed to remove original file: $FILENAME"
 
+   chmod 0755 "$TEMPFILENAME" # set permissions of file
+
    mv -f "$TEMPFILENAME" "${FILENAME%.ts}.mkv" # Move completed tempfile to .grab folder/filename
    check_errs $? "Failed to move converted file: $TEMPFILENAME"
 
