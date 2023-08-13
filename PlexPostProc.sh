@@ -36,7 +36,7 @@
 #
 #******************************************************************************
 
-TMPFOLDER="/tmp"
+TMPFOLDER="/tmp/plex"
 ENCODER="ffmpeg"  # Encoder to use:
                   # "ffmpeg" for FFMPEG [DEFAULT]
                   # "handbrake" for HandBrake
@@ -208,7 +208,8 @@ if [ ! -z "$1" ]; then
    rm -f "$FILENAME" # Delete original in .grab folder
    check_errs $? "Failed to remove original file: $FILENAME"
 
-   chmod 0755 "$TEMPFILENAME" # set permissions of file
+   chmod 755 "$TEMPFILENAME" # set permissions of file
+   check_errs $? "Failed to change permissions of  converted file: $TEMPFILENAME"
 
    mv -f "$TEMPFILENAME" "${FILENAME%.ts}.mkv" # Move completed tempfile to .grab folder/filename
    check_errs $? "Failed to move converted file: $TEMPFILENAME"
